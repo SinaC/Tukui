@@ -7,6 +7,7 @@ ns._Headers = {}
 
 local T, C, L = unpack(Tukui) -- Import: T - functions, constants, variables; C - config; L - locales
 if not C["unitframes"].enable == true or C["unitframes"].gridonly == true then return end
+if HealiumSettings and HealiumSettings.Options and HealiumSettings.Options.enabled and HealiumSettings[T.myclass] then return end -- Only if Healium not activated
 
 local font2 = C["media"].uffont
 local font1 = C["media"].font
@@ -17,6 +18,8 @@ local backdrop = {
 }
 
 local function Shared(self, unit)
+	print("Shared: "..(unit or "nil").."  "..self:GetName())
+
 	self.colors = T.oUF_colors
 	self:RegisterForClicks("AnyUp")
 	self:SetScript('OnEnter', UnitFrame_OnEnter)
@@ -206,18 +209,19 @@ local function Shared(self, unit)
 	return self
 end
 
-oUF:RegisterStyle('TukuiHealR01R15', Shared)
+oUF:RegisterStyle('TukuiHealR01R25', Shared)
 oUF:Factory(function(self)
-	oUF:SetActiveStyle("TukuiHealR01R15")
+	oUF:SetActiveStyle("TukuiHealR01R25")
 
-	local raid = self:SpawnHeader("oUF_TukuiHealRaid0115", nil, "custom [@raid16,exists] hide;show", 
+	local raid = self:SpawnHeader("oUF_TukuiHealRaid0125", nil, "custom [@raid26,exists] hide;show", 
 	'oUF-initialConfigFunction', [[
 		local header = self:GetParent()
 		self:SetWidth(header:GetAttribute('initial-width'))
 		self:SetHeight(header:GetAttribute('initial-height'))
 	]],
 	'initial-width', T.Scale(150*T.raidscale),
-	'initial-height', T.Scale(32*T.raidscale),	
+	'initial-height', T.Scale(32*T.raidscale),
+	"showSolo", C["unitframes"].showsolo,
 	"showParty", true, "showPlayer", C["unitframes"].showplayerinparty, "showRaid", true, "groupFilter", "1,2,3,4,5,6,7,8", "groupingOrder", "1,2,3,4,5,6,7,8", "groupBy", "GROUP", "yOffset", T.Scale(-4))
 	raid:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 15, -300*T.raidscale)
 	
