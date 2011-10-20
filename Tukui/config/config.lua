@@ -32,20 +32,21 @@ C["unitframes"] = {
 	["unicolor"] = false,                               -- enable unicolor theme
 	["combatfeedback"] = true,                          -- enable combattext on player and target.
 	["playeraggro"] = true,                             -- color player border to red if you have aggro on current target.
-	["healcomm"] = false,                               -- enable healprediction support.
+	["healcomm"] = true,                               -- enable healprediction support.
 	["onlyselfdebuffs"] = false,                        -- display only our own debuffs applied on target
 	["showfocustarget"] = true,                         -- show focus target
 	["bordercolor"] = { .4,.4,.4 },                     -- unit frames panel border color
 
 	-- raid layout (if one of them is enabled)
-	["showrange"] = true,                               -- show range opacity on raidframes
+	["showsolo"] = true,
+	["showrange"] = false,                               -- show range opacity on raidframes
 	["raidalphaoor"] = 0.3,                             -- alpha of unitframes when unit is out of range
 	["gridonly"] = false,                               -- enable grid only mode for all healer mode raid layout.
 	["showsymbols"] = true,	                            -- show symbol.
 	["aggro"] = true,                                   -- show aggro on all raids layouts
-	["raidunitdebuffwatch"] = true,                     -- track important spell to watch in pve for grid mode.
+	["raidunitdebuffwatch"] = false,                     -- track important spell to watch in pve for grid mode.
 	["gridhealthvertical"] = true,                      -- enable vertical grow on health bar for grid mode.
-	["showplayerinparty"] = false,                      -- show my player frame in party
+	["showplayerinparty"] = true,                      -- show my player frame in party
 	["gridscale"] = 1,                                  -- set the healing grid scaling
 	
 	-- boss frames
@@ -92,7 +93,7 @@ C["cooldown"] = {
 }
 
 C["datatext"] = {
-	["fps_ms"] = 4,                                     -- show fps and ms on panels
+	["fps_ms"] = 9,                                     -- show fps and ms on panels
 	["system"] = 5,                                     -- show total memory and others systems infos on panels
 	["bags"] = 0,                                       -- show space used in bags on panels
 	["gold"] = 6,                                       -- show your current gold on panels
@@ -107,7 +108,7 @@ C["datatext"] = {
 	["crit"] = 0,                                       -- show your crit rating on panels.
 	["avd"] = 0,                                        -- show your current avoidance against the level of the mob your targeting
 	["armor"] = 0,                                      -- show your armor value against the level mob you are currently targeting
-	["currency"] = 0,                                   -- show your tracked currency on panels
+	["currency"] = 4,                                   -- show your tracked currency on panels
 	["hit"] = 0,                                        -- show hit rating
 	["mastery"] = 0,                                    -- show mastery rating
 	["micromenu"] = 0,                                  -- add a micro menu thought datatext
@@ -127,12 +128,18 @@ C["chat"] = {
 
 C["nameplate"] = {
 	["enable"] = true,                                  -- enable nice skinned nameplates that fit into tukui
+	["showlevel"] = true,
+	["width"] = 105,
 	["showhealth"] = false,				                -- show health text on nameplate
-	["enhancethreat"] = false,			                -- threat features based on if your a tank or not
+	["enhancethreat"] = true,			                -- threat features based on if your a tank or not
 	["combat"] = false,					                -- only show enemy nameplates in-combat.
 	["goodcolor"] = {75/255,  175/255, 76/255},	        -- good threat color (tank shows this with threat, everyone else without)
 	["badcolor"] = {0.78, 0.25, 0.25},			        -- bad threat color (opposite of above)
-	["transitioncolor"] = {218/255, 197/255, 92/255},	-- threat color when gaining threat
+	--["transitioncolor"] = {218/255, 197/255, 92/255},	-- threat color when gaining threat
+	["goodtransitioncolor"] = {218/255, 197/255, 92/255},	--threat color when gaining threat
+	["badtransitioncolor"] = {240/255, 154/255, 17/255}, 
+	["trackauras"] = true,		--track players debuffs only (debuff list derived from classtimer spell list)
+	["trackccauras"] = true,			--track all CC debuffs
 }
 
 C["tooltip"] = {
@@ -146,6 +153,7 @@ C["tooltip"] = {
 C["merchant"] = {
 	["sellgrays"] = true,                               -- automaticly sell grays?
 	["autorepair"] = true,                              -- automaticly repair?
+	["guildrepair"] = true,                             -- use guild funds to repair
 	["sellmisc"] = true,                                -- sell defined items automatically
 }
 

@@ -45,12 +45,22 @@ f:SetScript("OnEvent", function()
 		if CanMerchantRepair() and C["merchant"].autorepair then
 			local cost, possible = GetRepairAllCost()
 			if cost>0 then
-				if possible then
-					RepairAllItems()
-					local c = cost%100
-					local s = math.floor((cost%10000)/100)
-					local g = math.floor(cost/10000)
-					DEFAULT_CHAT_FRAME:AddMessage(L.merchant_repaircost.." |cffffffff"..g..L.goldabbrev.." |cffffffff"..s..L.silverabbrev.." |cffffffff"..c..L.copperabbrev..".",255,255,0)
+				local guildRepairFlag = 0
+				if IsInGuild() and CanGuildBankRepair() and C["merchant"].guildrepair then
+				   if cost <= GetGuildBankWithdrawMoney() then
+				      guildRepairFlag = 1
+				   end
+				end
+				if (possible or guildRepairFlag) then
+				  RepairAllItems(guildRepairFlag)
+				  local c = cost%100
+				  local s = math.floor((cost%10000)/100)
+				  local g = math.floor(cost/10000)
+				  if ( guildRepairFlag ) then
+				     DEFAULT_CHAT_FRAME:AddMessage(L.merchant_repaircost.." |cffffffff"..g..L.goldabbrev.." |cffffffff"..s..L.silverabbrev.." |cffffffff"..c..L.copperabbrev..".",255,255,0)
+				  else
+				     DEFAULT_CHAT_FRAME:AddMessage(L.merchant_guildrepaircost.." |cffffffff"..g..L.goldabbrev.." |cffffffff"..s..L.silverabbrev.." |cffffffff"..c..L.copperabbrev..".",255,255,0)
+				  end
 				else
 					DEFAULT_CHAT_FRAME:AddMessage(L.merchant_repairnomoney,255,0,0)
 				end

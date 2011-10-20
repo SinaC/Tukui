@@ -118,6 +118,7 @@ if T.client == "frFR" then
 
 	L.merchant_repairnomoney = "Vous n'avez pas assez d'argent pour réparer !"
 	L.merchant_repaircost = "Tous les objets ont été réparés pour"
+	L.merchant_guildrepaircost = "Tous les objets ont été réparés par la guilde pour"
 	L.merchant_trashsell = "Les objets gris ont été vendus et vous avez gagné"
 	
 

@@ -24,6 +24,7 @@ T.PP = function(p, obj)
 	local right = TukuiInfoRight
 	local mapleft = TukuiMinimapStatsLeft
 	local mapright = TukuiMinimapStatsRight
+	local maptop = TukuiMinimapStatsTop
 	
 	if p == 1 then
 		obj:SetParent(left)
@@ -72,6 +73,11 @@ T.PP = function(p, obj)
 			obj:SetHeight(mapright:GetHeight())
 			obj:SetPoint('TOP', mapright)
 			obj:SetPoint('BOTTOM', mapright)
+		elseif p == 9 then
+			obj:SetParent(maptop)
+			obj:SetHeight(maptop:GetHeight())
+			obj:SetPoint('TOP', maptop)
+			obj:SetPoint('BOTTOM', maptop)
 		end
 	end
 end

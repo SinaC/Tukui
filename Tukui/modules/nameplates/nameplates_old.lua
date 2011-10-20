@@ -1,6 +1,6 @@
 ﻿local T, C, L = unpack(select(2, ...)) -- Import Functions/Constants, Config, Locales
 
---Base code by Dawn (dNameplates), rewritten by Elv22, modified by SinaC
+--Base code by Dawn (dNameplates), rewritten by Elv22
 if not C["nameplate"].enable == true then return end
 
 local TEXTURE = C["media"].normTex
@@ -8,10 +8,10 @@ local FONT = C["media"].font
 local FONTSIZE = 10
 local FONTFLAG = "THINOUTLINE"
 local hpHeight = 12
-local hpWidth = C["nameplate"].width
+local hpWidth = 110
 local iconSize = 25		--Size of all Icons, RaidIcon/ClassIcon/Castbar Icon
 local cbHeight = 5
-local cbWidth = C["nameplate"].width
+local cbWidth = 110
 local blankTex = C["media"].blank
 local OVERLAY = [=[Interface\TargetingFrame\UI-TargetingFrame-Flash]=]
 local numChildren = -1
@@ -26,49 +26,46 @@ end
 
 local NamePlates = CreateFrame("Frame", nil, UIParent)
 NamePlates:SetScript("OnEvent", function(self, event, ...) self[event](self, ...) end)
-if C["nameplate"].trackauras == true or C["nameplate"].trackccauras == true then
-	NamePlates:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+
+SetCVar("bloatthreat", 0)
+SetCVar("bloattest", 0)
+SetCVar("bloatnameplates", 0)
+
+if T.eyefinity then
+	SetCVar("nameplateMotion", "0")
+	InterfaceOptionsNamesPanelUnitNameplatesMotionDropDown:Kill()
 end
 
---SetCVar("bloatthreat", 0)
---SetCVar("bloattest", 0)
---SetCVar("bloatnameplates", 0)
+--Nameplates we do NOT want to see
+local PlateBlacklist = {
+	--Shaman Totems (Ones that don't matter)
+	["Earth Elemental Totem"] = true,
+	["Fire Elemental Totem"] = true,
+	["Fire Resistance Totem"] = true,
+	["Flametongue Totem"] = true,
+	["Frost Resistance Totem"] = true,
+	["Healing Stream Totem"] = true,
+	["Magma Totem"] = true,
+	["Mana Spring Totem"] = true,
+	["Nature Resistance Totem"] = true,
+	["Searing Totem"] = true,
+	["Stoneclaw Totem"] = true,
+	["Stoneskin Totem"] = true,
+	["Strength of Earth Totem"] = true,
+	["Windfury Totem"] = true,
+	["Totem of Wrath"] = true,
+	["Wrath of Air Totem"] = true,
 
---if T.eyefinity then
---	SetCVar("nameplateMotion", "0")
---	InterfaceOptionsNamesPanelUnitNameplatesMotionDropDown:Kill()
---end
+	--Army of the Dead
+	["Army of the Dead Ghoul"] = true,
 
--- --Nameplates we do NOT want to see
--- local PlateBlacklist = {
-	-- --Shaman Totems (Ones that don't matter)
-	-- ["Earth Elemental Totem"] = true,
-	-- ["Fire Elemental Totem"] = true,
-	-- ["Fire Resistance Totem"] = true,
-	-- ["Flametongue Totem"] = true,
-	-- ["Frost Resistance Totem"] = true,
-	-- ["Healing Stream Totem"] = true,
-	-- ["Magma Totem"] = true,
-	-- ["Mana Spring Totem"] = true,
-	-- ["Nature Resistance Totem"] = true,
-	-- ["Searing Totem"] = true,
-	-- ["Stoneclaw Totem"] = true,
-	-- ["Stoneskin Totem"] = true,
-	-- ["Strength of Earth Totem"] = true,
-	-- ["Windfury Totem"] = true,
-	-- ["Totem of Wrath"] = true,
-	-- ["Wrath of Air Totem"] = true,
+	--Hunter Trap
+	["Venomous Snake"] = true,
+	["Viper"] = true,
 
-	-- --Army of the Dead
-	-- ["Army of the Dead Ghoul"] = true,
-
-	-- --Hunter Trap
-	-- ["Venomous Snake"] = true,
-	-- ["Viper"] = true,
-
-	-- --Test
-	-- --["Unbound Seer"] = true,
--- }
+	--Test
+	--["Unbound Seer"] = true,
+}
 
 local function QueueObject(parent, object)
 	parent.queue = parent.queue or {}
@@ -106,11 +103,6 @@ local function CreateVirtualFrame(parent, point)
 	parent.backdrop:SetPoint("BOTTOMRIGHT", point, "BOTTOMRIGHT", noscalemult*3, -noscalemult*3)
 	parent.backdrop:SetTexture(unpack(C["media"].backdropcolor))
 
-	parent.backdrop2 = parent:CreateTexture(nil, "BORDER")
-	parent.backdrop2:SetDrawLayer("BORDER", -7)
-	parent.backdrop2:SetAllPoints(point)
-	parent.backdrop2:SetTexture(unpack(C["media"].backdropcolor))	
-	
 	parent.bordertop = parent:CreateTexture(nil, "BORDER")
 	parent.bordertop:SetPoint("TOPLEFT", point, "TOPLEFT", -noscalemult*2, noscalemult*2)
 	parent.bordertop:SetPoint("TOPRIGHT", point, "TOPRIGHT", noscalemult*2, noscalemult*2)
@@ -145,87 +137,6 @@ local function SetVirtualBorder(parent, r, g, b, a)
 	parent.borderbottom:SetTexture(r, g, b)
 	parent.borderleft:SetTexture(r, g, b)
 	parent.borderright:SetTexture(r, g, b)
-end
-
---Create our Aura Icons
-local function CreateAuraIcon(parent)
-	local button = CreateFrame("Frame",nil,parent)
-	button:SetWidth(20)
-	button:SetHeight(20)
-	
-	button.bg = button:CreateTexture(nil, "BACKGROUND")
-	button.bg:SetTexture(unpack(C["media"].backdropcolor))
-	button.bg:SetAllPoints(button)
-	
-	button.bord = button:CreateTexture(nil, "BORDER")
-	button.bord:SetTexture(unpack(C["media"].bordercolor))
-	button.bord:SetPoint("TOPLEFT",button,"TOPLEFT", noscalemult,-noscalemult)
-	button.bord:SetPoint("BOTTOMRIGHT",button,"BOTTOMRIGHT",-noscalemult,noscalemult)
-	
-	button.bg2 = button:CreateTexture(nil, "ARTWORK")
-	button.bg2:SetTexture(unpack(C["media"].backdropcolor))
-	button.bg2:SetPoint("TOPLEFT",button,"TOPLEFT", noscalemult*2,-noscalemult*2)
-	button.bg2:SetPoint("BOTTOMRIGHT",button,"BOTTOMRIGHT",-noscalemult*2,noscalemult*2)	
-	
-	button.icon = button:CreateTexture(nil, "OVERLAY")
-	button.icon:SetPoint("TOPLEFT",button,"TOPLEFT", noscalemult*3,-noscalemult*3)
-	button.icon:SetPoint("BOTTOMRIGHT",button,"BOTTOMRIGHT",-noscalemult*3,noscalemult*3)
-	button.icon:SetTexCoord(0.1, 0.9, 0.1, 0.9)
-	button.cd = CreateFrame("Cooldown",nil,button)
-	button.cd:SetAllPoints(button)
-	button.cd:SetReverse(true)
-	button.count = button:CreateFontString(nil,"OVERLAY")
-	button.count:SetFont(FONT,7,FONTFLAG)
-	button.count:SetShadowColor(0, 0, 0, 0.4)
-	button.count:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0, 2)
-	return button
-end
-
---Update an Aura Icon
-local function UpdateAuraIcon(button, unit, index, filter)
-	local name,_,icon,count,debuffType,duration,expirationTime,_,_,_,spellID = UnitAura(unit,index,filter)
-	
-	button.icon:SetTexture(icon)
-	button.cd:SetCooldown(expirationTime-duration,duration)
-	button.expirationTime = expirationTime
-	button.duration = duration
-	button.spellID = spellID
-	if count > 1 then 
-		button.count:SetText(count)
-	else
-		button.count:SetText("")
-	end
-	button.cd:SetScript("OnUpdate", function(self) if not button.cd.timer then self:SetScript("OnUpdate", nil) return end button.cd.timer.text:SetFont(FONT,8,FONTFLAG) button.cd.timer.text:SetShadowColor(0, 0, 0, 0.4) end)
-	button:Show()
-end
-
---Filter auras on nameplate, and determine if we need to update them or not.
-local function OnAura(frame, unit)
-	if not frame.icons or not frame.unit then return end
-	local i = 1
-	for index = 1,40 do
-		if i > 5 then return end
-		local match
-		local name,_,_,_,_,duration,_,caster,_,_,spellid = UnitAura(frame.unit,index,"HARMFUL")
-		
-		if C["nameplate"].trackauras == true then
-			if caster == "player" then match = true end
-		end
-		
-		if C["nameplate"].trackccauras == true then
-			if T.DebuffWhiteList[name] then match = true end
-		end
-		
-		if duration and match == true then
-			if not frame.icons[i] then frame.icons[i] = CreateAuraIcon(frame) end
-			local icon = frame.icons[i]
-			if i == 1 then icon:SetPoint("RIGHT",frame.icons,"RIGHT") end
-			if i ~= 1 and i <= 5 then icon:SetPoint("RIGHT", frame.icons[i-1], "LEFT", -2, 0) end
-			i = i + 1
-			UpdateAuraIcon(icon, frame.unit, index, "HARMFUL")
-		end
-	end
-	for index = i, #frame.icons do frame.icons[index]:Hide() end
 end
 
 --Color the castbar depending on if we can interrupt or not, 
@@ -274,52 +185,39 @@ local function OnHide(frame)
 	frame.hp:SetStatusBarColor(frame.hp.rcolor, frame.hp.gcolor, frame.hp.bcolor)
 	frame.overlay:Hide()
 	frame.cb:Hide()
-	frame.unit = nil
-	frame.threatStatus = nil
-	frame.guid = nil
 	frame.hasClass = nil
 	frame.isFriendly = nil
 	frame.hp.rcolor = nil
 	frame.hp.gcolor = nil
 	frame.hp.bcolor = nil
-	if frame.icons then
-		for _,icon in ipairs(frame.icons) do
-			icon:Hide()
-		end
-	end	
-	
+
 	frame:SetScript("OnUpdate",nil)
 end
 
 --Color Nameplate
 local function Colorize(frame)
-	local r,g,b = frame.healthOriginal:GetStatusBarColor()
+	local r,g,b = frame.hp:GetStatusBarColor()
 	
 	for class, color in pairs(RAID_CLASS_COLORS) do
 		local r, g, b = floor(r*100+.5)/100, floor(g*100+.5)/100, floor(b*100+.5)/100
 		if RAID_CLASS_COLORS[class].r == r and RAID_CLASS_COLORS[class].g == g and RAID_CLASS_COLORS[class].b == b then
 			frame.hasClass = true
 			frame.isFriendly = false
-			frame.hp:SetStatusBarColor(unpack(T.oUF_colors.class[class]))
 			return
 		end
 	end
 	
 	if g+b == 0 then -- hostile
-		--r,g,b = 222/255, 95/255,  95/255
-		r,g,b = unpack(T.oUF_colors.reaction[1])
+		r,g,b = 222/255, 95/255,  95/255
 		frame.isFriendly = false
 	elseif r+b == 0 then -- friendly npc
-		--r,g,b = 0.31, 0.45, 0.63
-		r,g,b = unpack(T.oUF_colors.power["MANA"])
+		r,g,b = 0.31, 0.45, 0.63
 		frame.isFriendly = true
 	elseif r+g > 1.95 then -- neutral
-		--r,g,b = 218/255, 197/255, 92/255
-		r,g,b = unpack(T.oUF_colors.reaction[4])
+		r,g,b = 218/255, 197/255, 92/255
 		frame.isFriendly = false
 	elseif r+g == 0 then -- friendly player
-		--r,g,b = 75/255,  175/255, 76/255
-		r,g,b = unpack(T.oUF_colors.reaction[5])
+		r,g,b = 75/255,  175/255, 76/255
 		frame.isFriendly = true
 	else -- enemy player
 		frame.isFriendly = false
@@ -341,11 +239,7 @@ local function UpdateObjects(frame)
 	frame.hp:SetSize(hpWidth, hpHeight)	
 	frame.hp:SetPoint('TOP', frame, 'TOP', 0, -15)
 	frame.hp:GetStatusBarTexture():SetHorizTile(true)
-	
-	frame.hp:SetMinMaxValues(frame.healthOriginal:GetMinMaxValues())
-	frame.hp:SetValue(frame.healthOriginal:GetValue())
-
-	
+			
 	--Colorize Plate
 	Colorize(frame)
 	frame.hp.rcolor, frame.hp.gcolor, frame.hp.bcolor = frame.hp:GetStatusBarColor()
@@ -360,57 +254,41 @@ local function UpdateObjects(frame)
 	frame.hp.name:SetText(frame.hp.oldname:GetText())
 	
 	--Setup level text
-	if C["nameplate"].showlevel == true then
-		local level, elite, mylevel = tonumber(frame.hp.oldlevel:GetText()), frame.hp.elite:IsShown(), UnitLevel("player")
-		frame.hp.level:ClearAllPoints()
-		if C["nameplate"].showhealth == true then
-			frame.hp.level:SetPoint("RIGHT", frame.hp, "RIGHT", 2, 0)
-		else
-			frame.hp.level:SetPoint("RIGHT", frame.hp, "LEFT", -1, 0)
-		end
-		
-		frame.hp.level:SetTextColor(frame.hp.oldlevel:GetTextColor())
-		if frame.hp.boss:IsShown() then
-			frame.hp.level:SetText("??")
-			frame.hp.level:SetTextColor(0.8, 0.05, 0)
-			frame.hp.level:Show()
-		elseif not elite and level == mylevel then
-			frame.hp.level:Hide()
-		else
-			frame.hp.level:SetText(level..(elite and "+" or ""))
-			frame.hp.level:Show()
-		end
+	local level, elite, mylevel = tonumber(frame.hp.oldlevel:GetText()), frame.hp.elite:IsShown(), UnitLevel("player")
+	frame.hp.level:ClearAllPoints()
+	if C["nameplate"].showhealth == true then
+		frame.hp.level:SetPoint("RIGHT", frame.hp, "RIGHT", 2, 0)
+	else
+		frame.hp.level:SetPoint("RIGHT", frame.hp, "LEFT", -1, 0)
+	end
+	
+	frame.hp.level:SetTextColor(frame.hp.oldlevel:GetTextColor())
+	if frame.hp.boss:IsShown() then
+		frame.hp.level:SetText("??")
+		frame.hp.level:SetTextColor(0.8, 0.05, 0)
+		frame.hp.level:Show()
+	elseif not elite and level == mylevel then
+		frame.hp.level:Hide()
+	else
+		frame.hp.level:SetText(level..(elite and "+" or ""))
+		frame.hp.level:Show()
 	end
 	
 	frame.overlay:ClearAllPoints()
 	frame.overlay:SetAllPoints(frame.hp)
-	
-	-- Aura tracking
-	if C["nameplate"].trackauras == true or C["nameplate"].trackccauras == true then
-		if frame.icons then return end
-		frame.icons = CreateFrame("Frame",nil,frame)
-		frame.icons:SetPoint("BOTTOMRIGHT",frame.hp,"TOPRIGHT", 0, FONTSIZE+5)
-		frame.icons:SetWidth(20 + hpWidth)
-		frame.icons:SetHeight(25)
-		frame.icons:SetFrameLevel(frame.hp:GetFrameLevel()+2)
-		frame:RegisterEvent("UNIT_AURA")
-		frame:HookScript("OnEvent", OnAura)
-	end	
 
 	HideObjects(frame)
 end
 
 --This is where we create most 'Static' objects for the nameplate, it gets fired when a nameplate is first seen.
 local function SkinObjects(frame)
-	local oldhp, cb = frame:GetChildren()
+	local hp, cb = frame:GetChildren()
 	local threat, hpborder, overlay, oldname, oldlevel, bossicon, raidicon, elite = frame:GetRegions()
 	local _, cbborder, cbshield, cbicon = cb:GetRegions()
 
 	--Health Bar
-	frame.healthOriginal = oldhp
-	local hp = CreateFrame("Statusbar", nil, frame)
-	hp:SetFrameLevel(oldhp:GetFrameLevel())
-	hp:SetFrameStrata(oldhp:GetFrameStrata())
+	frame.healthOriginal = hp
+	hp:SetFrameLevel(1)
 	hp:SetStatusBarTexture(TEXTURE)
 	CreateVirtualFrame(hp)
 	
@@ -451,7 +329,7 @@ local function SkinObjects(frame)
 	frame.hp = hp
 	
 	--Cast Bar
-	--cb:SetFrameLevel(1)
+	cb:SetFrameLevel(1)
 	cb:SetStatusBarTexture(TEXTURE)
 	CreateVirtualFrame(cb)
 	
@@ -501,7 +379,6 @@ local function SkinObjects(frame)
 	frame.raidicon = raidicon
 	
 	--Hide Old Stuff
-	QueueObject(frame, oldhp)
 	QueueObject(frame, oldlevel)
 	QueueObject(frame, threat)
 	QueueObject(frame, hpborder)
@@ -520,12 +397,11 @@ end
 
 local goodR, goodG, goodB = unpack(C["nameplate"].goodcolor)
 local badR, badG, badB = unpack(C["nameplate"].badcolor)
-local transitionR, transitionG, transitionB = unpack(C["nameplate"].goodtransitioncolor)
-local transitionR2, transitionG2, transitionB2 = unpack(C["nameplate"].badtransitioncolor)
+local transitionR, transitionG, transitionB = unpack(C["nameplate"].transitioncolor)
 local function UpdateThreat(frame, elapsed)
 	frame.hp:Show()
 	if frame.hasClass == true then return end
-	--print(T.Role)
+	
 	if C["nameplate"].enhancethreat ~= true then
 		if(frame.region:IsShown()) then
 			local _, val = frame.region:GetVertexColor()
@@ -545,17 +421,14 @@ local function UpdateThreat(frame, elapsed)
 				if T.Role == "Tank" then
 					frame.hp:SetStatusBarColor(badR, badG, badB)
 					frame.hp.hpbg:SetTexture(badR, badG, badB, 0.25)
-					frame.threatStatus = "BAD"
 				else
 					frame.hp:SetStatusBarColor(goodR, goodG, goodB)
 					frame.hp.hpbg:SetTexture(goodR, goodG, goodB, 0.25)
-					frame.threatStatus = "GOOD"
 				end		
 			else
 				--Set colors to their original, not in combat
 				frame.hp:SetStatusBarColor(frame.hp.rcolor, frame.hp.gcolor, frame.hp.bcolor)
 				frame.hp.hpbg:SetTexture(frame.hp.rcolor, frame.hp.gcolor, frame.hp.bcolor, 0.25)
-				frame.threatStatus = nil
 			end
 		else
 			--Ok we either have threat or we're losing/gaining it
@@ -565,35 +438,14 @@ local function UpdateThreat(frame, elapsed)
 				if T.Role == "Tank" then
 					frame.hp:SetStatusBarColor(goodR, goodG, goodB)
 					frame.hp.hpbg:SetTexture(goodR, goodG, goodB, 0.25)
-					frame.threatStatus = "GOOD"
 				else
 					frame.hp:SetStatusBarColor(badR, badG, badB)
 					frame.hp.hpbg:SetTexture(badR, badG, badB, 0.25)
-					frame.threatStatus = "BAD"
 				end
 			else
 				--Losing/Gaining Threat
-				if T.Role == "Tank" then
-					if frame.threatStatus == "GOOD" then
-						--Losing Threat
-						frame.hp:SetStatusBarColor(transitionR2, transitionG2, transitionB2)	
-						frame.hp.hpbg:SetTexture(transitionR2, transitionG2, transitionB2, 0.25)				
-					else
-						--Gaining Threat
-						frame.hp:SetStatusBarColor(transitionR, transitionG, transitionB)	
-						frame.hp.hpbg:SetTexture(transitionR, transitionG, transitionB, 0.25)	
-					end
-				else
-					if frame.threatStatus == "GOOD" then
-						--Losing Threat
-						frame.hp:SetStatusBarColor(transitionR, transitionG, transitionB)	
-						frame.hp.hpbg:SetTexture(transitionR, transitionG, transitionB, 0.25)				
-					else
-						--Gaining Threat
-						frame.hp:SetStatusBarColor(transitionR2, transitionG2, transitionB2)	
-						frame.hp.hpbg:SetTexture(transitionR2, transitionG2, transitionB2, 0.25)	
-					end				
-				end
+				frame.hp:SetStatusBarColor(transitionR, transitionG, transitionB)	
+				frame.hp.hpbg:SetTexture(transitionR, transitionG, transitionB, 0.25)
 			end
 		end
 	end
@@ -601,7 +453,7 @@ end
 
 --Create our blacklist for nameplates, so prevent a certain nameplate from ever showing
 local function CheckBlacklist(frame, ...)
-	if T.PlateBlacklist[frame.hp.name:GetText()] then
+	if PlateBlacklist[frame.hp.name:GetText()] then
 		frame:SetScript("OnUpdate", function() end)
 		frame.hp:Hide()
 		frame.cb:Hide()
@@ -655,46 +507,7 @@ local function ShowHealth(frame, ...)
 	end
 end
 
---Scan all visible nameplate for a known unit.
-local function CheckUnit_Guid(frame, ...)
-	--local numParty, numRaid = GetNumPartyMembers(), GetNumRaidMembers()
-	if UnitExists("target") and frame:GetAlpha() == 1 and UnitName("target") == frame.hp.name:GetText() then
-		frame.guid = UnitGUID("target")
-		frame.unit = "target"
-		OnAura(frame, "target")
-	elseif frame.overlay:IsShown() and UnitExists("mouseover") and UnitName("mouseover") == frame.hp.name:GetText() then
-		frame.guid = UnitGUID("mouseover")
-		frame.unit = "mouseover"
-		OnAura(frame, "mouseover")
-	else
-		frame.unit = nil
-	end	
-end
-
---Update settings for nameplate to match config
-local function CheckSettings(frame, ...)
-	--Width
-	if frame.hp:GetWidth() ~= C["nameplate"].width then
-		frame.hp:Width(C["nameplate"].width)
-		hpWidth = C["nameplate"].width
-	end
-end
-
---Attempt to match a nameplate with a GUID from the combat log
-local function MatchGUID(frame, destGUID, spellID)
-	if not frame.guid then return end
-	
-	
-	if frame.guid == destGUID then
-		for _,icon in ipairs(frame.icons) do 
-			if icon.spellID == spellID then 
-				icon:Hide() 
-			end 
-		end
-	end
-end
-
---Run a function for all visible nameplates, we use this for the blacklist, to check unitguid, and to hide drunken text
+--Run a function for all visible nameplates
 local function ForEachPlate(functionToRun, ...)
 	for frame in pairs(frames) do
 		if frame:IsShown() then
@@ -735,19 +548,7 @@ CreateFrame('Frame'):SetScript('OnUpdate', function(self, elapsed)
 	ForEachPlate(ShowHealth)
 	ForEachPlate(CheckBlacklist)
 	ForEachPlate(HideDrunkenText)
-	ForEachPlate(CheckUnit_Guid)
-	ForEachPlate(CheckSettings)
 end)
-
-function NamePlates:COMBAT_LOG_EVENT_UNFILTERED(_, event, ...)
-	if event == "SPELL_AURA_REMOVED" then
-		local _, sourceGUID, _, _, _, destGUID, _, _, _, spellID = ...
-		
-		if sourceGUID == UnitGUID("player") then
-			ForEachPlate(MatchGUID, destGUID, spellID)
-		end
-	end
-end
 
 --Only show nameplates when in combat
 if C["nameplate"].combat == true then
@@ -775,14 +576,5 @@ function NamePlates:PLAYER_ENTERING_WORLD()
 	
 	if C["nameplate"].enable == true and C["nameplate"].enhancethreat == true then
 		SetCVar("threatWarning", 3)
-	end
-	
-	SetCVar('threatWarning', '3')
-	SetCVar("bloatthreat", 0)
-	SetCVar("bloattest", 1)
-	SetCVar("bloatnameplates", 0)
-	if T.eyefinity then
-		SetCVar("nameplateMotion", "0")
-		InterfaceOptionsNamesPanelUnitNameplatesMotionDropDown:Kill()
 	end
 end

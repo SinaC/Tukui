@@ -21,7 +21,10 @@ if C["datatext"].currency and C["datatext"].currency > 0 then
 				if(i ~= 1) then _text = _text .. " " else _text = "" end
 				words = { strsplit(" ", name) }
 				for _, word in ipairs(words) do
-					_text = _text .. string.sub(word,1,1)
+					local first = string.sub(word,1,1)
+					if ( first ~= "d" ) then
+						_text = _text .. string.upper(first)
+					end
 				end
 				_text = _text .. ": " .. count
 			end

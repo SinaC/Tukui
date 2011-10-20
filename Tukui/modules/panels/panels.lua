@@ -207,6 +207,9 @@ if TukuiMinimap then
 
 	local minimapstatsright = CreateFrame("Frame", "TukuiMinimapStatsRight", TukuiMinimap)
 	minimapstatsright:CreatePanel("Default", ((TukuiMinimap:GetWidth() + 4) / 2) -3, 19, "TOPRIGHT", TukuiMinimap, "BOTTOMRIGHT", 0, -2)
+	
+	local minimapstatstop = CreateFrame("Frame", "TukuiMinimapStatsTop", TukuiMinimap)
+	minimapstatstop:CreatePanel("Default", TukuiMinimap:GetWidth(), 19, "BOTTOM", TukuiMinimap, "TOP", 0, 2)
 end
 
 --BATTLEGROUND STATS FRAME

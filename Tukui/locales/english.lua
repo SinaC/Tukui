@@ -117,6 +117,7 @@ L.popup_reset_no = "No, or else I'll QQ in the forums!"
 
 L.merchant_repairnomoney = "You don't have enough money to repair!"
 L.merchant_repaircost = "Your items have been repaired for"
+L.merchant_guildrepaircost = "Your items have been guild repaired for"
 L.merchant_trashsell = "Your vendor trash has been sold and you earned"
 
 L.goldabbrev = "|cffffd700g|r"

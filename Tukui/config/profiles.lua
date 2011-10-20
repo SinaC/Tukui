@@ -13,9 +13,14 @@ end
 -- Name need to be case sensitive
 ----------------------------------------------------------------------------
 
-if T.myname == "Tukz" then
-	-- yeah my default config is not really like default tukui.
-	C.actionbar.hotkey = false
-	C.actionbar.hideshapeshift = true
-	C.unitframes.enemyhcolor = true
+if T.myname == "Meuhhnon" then
+	C.unitframes.disablepartyraid = true
+end
+
+if T.myname == "Yoog" then
+	C.unitframes.disablepartyraid = true
+end
+
+if T.myname == "Enimouchet" then
+	C.unitframes.disablepartyraid = true
 end

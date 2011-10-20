@@ -13,6 +13,7 @@
 	<Script file="locales\chinese.lua"/>
 	<Script file="config\config.lua"/>
 	<Script file="config\profiles.lua"/>
+	<Script file="config\filters\nameplate.lua"/>
 	<Script file="core\configui.lua"/>
 	<Script file="medias\medias.lua"/>
 	<Include file="modules\unitframes\core\oUF\oUF.xml"/>

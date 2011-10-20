@@ -111,7 +111,7 @@ if (buffs and buffs[1]) then
 
 	frame.icon = frame:CreateTexture(nil, "OVERLAY")
 	frame.icon:SetPoint("CENTER")
-	frame:CreatePanel("Default", 40, 40, "CENTER", UIParent, "CENTER", 0, 200)
+	frame:CreatePanel("Default", 40, 40, "CENTER", UIParent, "CENTER", 0, 400)
 	frame.icon:SetTexCoord(0.1, 0.9, 0.1, 0.9)
 	frame.icon:Size(36)
 	frame:Hide()
