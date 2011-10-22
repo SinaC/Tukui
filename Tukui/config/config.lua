@@ -15,7 +15,7 @@ C["unitframes"] = {
 	["enable"] = true,                                  -- do i really need to explain this?
 	["enemyhcolor"] = false,                            -- enemy target (players) color by hostility, very useful for healer.
 	["unitcastbar"] = true,                             -- enable tukui castbar
-	["cblatency"] = false,                              -- enable castbar latency
+	["cblatency"] = true,                              -- enable castbar latency
 	["cbicons"] = true,                                 -- enable icons on castbar
 	["auratimer"] = true,                               -- enable timers on buffs/debuffs
 	["auratextscale"] = 11,                             -- the font size of buffs/debuffs timers on unitframes
@@ -32,14 +32,14 @@ C["unitframes"] = {
 	["unicolor"] = false,                               -- enable unicolor theme
 	["combatfeedback"] = true,                          -- enable combattext on player and target.
 	["playeraggro"] = true,                             -- color player border to red if you have aggro on current target.
-	["healcomm"] = true,                               -- enable healprediction support.
+	["healcomm"] = true,                                -- enable healprediction support.
 	["onlyselfdebuffs"] = false,                        -- display only our own debuffs applied on target
 	["showfocustarget"] = true,                         -- show focus target
 	["bordercolor"] = { .4,.4,.4 },                     -- unit frames panel border color
 
 	-- raid layout (if one of them is enabled)
 	["showsolo"] = true,
-	["showrange"] = false,                               -- show range opacity on raidframes
+	["showrange"] = true,                               -- show range opacity on raidframes
 	["raidalphaoor"] = 0.3,                             -- alpha of unitframes when unit is out of range
 	["gridonly"] = false,                               -- enable grid only mode for all healer mode raid layout.
 	["showsymbols"] = true,	                            -- show symbol.
@@ -123,7 +123,7 @@ C["datatext"] = {
 C["chat"] = {
 	["enable"] = true,                                  -- blah
 	["whispersound"] = true,                            -- play a sound when receiving whisper
-	["background"] = false,
+	["background"] = true,
 }
 
 C["nameplate"] = {

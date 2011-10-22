@@ -18,7 +18,7 @@ local backdrop = {
 }
 
 local function Shared(self, unit)
-	print("Shared: "..(unit or "nil").."  "..self:GetName())
+	--print("Shared: "..(unit or "nil").."  "..self:GetName())
 
 	self.colors = T.oUF_colors
 	self:RegisterForClicks("AnyUp")

@@ -58,23 +58,29 @@
 -- new folder structure -> OK
 -- on /reloadui CheckSpellSettings signals Macro as invalid  --> when connecting, error message are displayed 2 times with PLAYER_LOGIN and PLAYER_ALIVE   when reloadui  displayed only 1 time with PLAYER_LOGIN -> OK
 -- new settings structure -> OK
+-- range by spell: Tukui\Tukui\modules\unitframes\core\oUF\elements\range.lua (button.hOOR), set C["unitframes"].showrange to false -> OK
 -- deletion of non-class specific settings -> OK
+-- new performance counter -> OK
+-- debuff filter: BLACKLIST, WHITELIST, NONE -> OK
+-- while entering raid40 (or alterac), healium frame are considered as shown but are not shown (debuff sound is played when someone is affected by a debuff :p) -> OK (frame:GetParent():IsShown() must be true)
 
 -- TO TEST:
 -- ========
 
 -- ISSUES:
 -- =======
--- range by spell: Tukui\Tukui\modules\unitframes\core\oUF\elements\range.lua (button.hOOR), set C["unitframes"].showrange to false -> OK except for rez while target is in ghost
--- when connecting in solo (no group, no pet) a raidpet frame is created. After creation frame.unit = nil and frame:IsShown() returns nil
--- raid member contextual menu (right-click) is not skinned but is skinned in classic heal/dps tukui raidframes
+-- when connecting in solo (no group, no pet) a raidpet frame is created. After creation, frame.unit = nil and frame:IsShown() returns nil
+-- raid member contextual menu (right-click) is not skinned while in a raid group but is skinned in classic heal/dps tukui raidframes
 
 -- TODO:
 -- =====
+-- resize frame (smaller height) when raid > 15
+-- dump perf: sort on count
+-- use spellName everywhere instead of spellID
 -- addon CPU profiling  http://wow.curseforge.com/addons/addon-profiler/   http://www.wowinterface.com/downloads/info13888-AddonProfiler.html
 -- Tank frame (attributes: [["groupFilter", "MAINTANK,TANK"]],  [["groupBy", "ROLE"]],    showParty, showRaid but not showSolo)
 -- pet spells
--- optimize OOM, OOR ... in general way, don't call ForEachMembers(UpdateButtonsColor) so often
+-- optimize UpdateCooldown (no need to call it more than once every 0.2sec, maybe not needed to update if already running), OOM, OOR ... in general way, don't call ForEachMembers(UpdateButtonsColor) so often
 -- reload settings/UpdateFrameButtons when resetting talents
 -- why raid frame moves automatically? -> probably because unitframes are centered in raid frame
 -- multirow: 2 rows of spell/buff/debuff (looks ugly :p)
@@ -199,6 +205,40 @@ local function IsSpellLearned(spellID)
 	return nil
 end
 
+-- Create a list with spellID and spellName from a list of spellID (+ remove duplicates)
+local function CreateDebuffFilterList(listName, list)
+	local newList = {}
+	local i = 1
+	local index = 1
+	while i <= #list do
+		local spellName = GetSpellInfo(list[i])
+		if spellName then
+			-- Check for duplicate
+			local j = 1
+			local found = false
+			while j < #newList do
+				if newList[j].spellName == spellName then
+					found = true
+					break
+				end
+				j = j + 1
+			end
+			if not found then
+				-- Create entry in new list
+				newList[index] = { spellID = list[i], spellName = spellName }
+				index = index + 1
+			-- else
+				-- -- Duplicate found
+				-- WARNING(string.format(L.healium_SETTINGS_DUPLICATEBUFFDEBUFF, list[i], newList[j].spellID, spellName, listName))
+			end
+		else
+			-- Unknown spell found
+			WARNING(string.format(L.healium_SETTINGS_UNKNOWNBUFFDEBUFF, list[i], listName))
+		end
+		i = i + 1
+	end
+	return newList
+end
 -------------------------------------------------------
 -- Unitframes management
 -------------------------------------------------------
@@ -227,7 +267,7 @@ local function ForEachMember(fct, ...)
 	for _, frame in ipairs(Unitframes) do
 		--WARNING("ForEachMember:"..frame:GetName().."  "..(frame.unit or 'nil').."  "..(frame:IsShown() and 'shown' or 'hidden'))
 		--if frame and frame:IsShown() then -- IsShown is false if /reloadui
-		if frame and frame.unit ~= nil then -- IsShown is false if /reloadui
+		if frame and frame:GetParent():IsShown() and frame.unit ~= nil then -- IsShown is false if /reloadui
 			fct(frame, ...)
 		-- elseif frame.unit then
 			-- WARNING("ForEachMember:"..frame:GetName().."  "..(frame.unit or 'nil').."  "..(frame:IsShown() and 'shown' or 'hidden'))
@@ -240,7 +280,6 @@ end
 -------------------------------------------------------
 -- Return settings for current spec
 local function GetSpecSettings()
-	PerformanceCounter:Increment("TukuiHealium", "GetSettings")
 	--DEBUG("GetSettings")
 	local ptt = GetPrimaryTalentTree()
 	if not ptt then return nil end
@@ -276,7 +315,7 @@ end
 -- Dump information about frame
 local function DumpFrame(frame)
 	if not frame then return end
-	DumpSack:Add("Frame "..tostring(frame:GetName()).." S="..tostring(frame:IsShown()).." U="..tostring(frame.unit).." D="..tostring(frame.hDisabled))
+	DumpSack:Add("Frame "..tostring(frame:GetName()).." S="..tostring(frame:IsShown()).." U="..tostring(frame.unit).." D="..tostring(frame.hDisabled).." PS="..tostring(frame:GetParent():IsShown()))
 	if frame.hButtons then
 		DumpSack:Add("Buttons")
 		for i, button in ipairs(frame.hButtons) do
@@ -501,7 +540,7 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 				-- get buff
 				name, _, icon, count, _, duration, expirationTime, _, _, _, spellID = UnitAura(unit, i, "PLAYER|HELPFUL")
 				if not name then break end
-				tinsert(buffs, spellID) -- we display buff castable by player but we keep the whole list of buff to check prereq
+				tinsert(buffs, spellID) -- display only buff castable by player but keep whole list of buff to check prereq
 				-- is buff casted by player and in spell list?
 				local found = false
 				for index, spellSetting in ipairs(SpecSettings.spells) do
@@ -545,7 +584,7 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 					buffIndex = buffIndex + 1
 					-- too many buff?
 					if buffIndex > MaxBuffCount then
-						WARNING(string.format(L.healium_BUFFDEBUFF_TOOMANYBUFF, frame:GetName(), unit))
+						--WARNING(string.format(L.healium_BUFFDEBUFF_TOOMANYBUFF, frame:GetName(), unit))
 						break
 					end
 				end
@@ -568,34 +607,49 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 			-- get debuff
 			local name, _, icon, count, debuffType, duration, expirationTime, _, _, _, spellID = UnitDebuff(unit, i)
 			if not name then break end
-			tinsert(debuffs, {spellID, debuffType}) -- we display only non-blacklisted debuff but we keep the whole debuff list to check prereq
-			-- is debuff blacklisted?
-			local filtered = false
-			if HealiumSettings.Options.debuffBlacklist then
-				for _, debuffBlackListSpellID in ipairs(HealiumSettings.Options.debuffBlacklist) do
-					if debuffBlackListSpellID == spellID then
-						filtered = true
-						break
+			-- if debuffType then
+				-- DEBUG("debuffType: "..debuffType)
+			-- end
+			tinsert(debuffs, {spellID, debuffType}) -- display not filtered debuff but keep whole debuff list to check prereq
+			local dispellable = false -- default: non-dispellable
+			if debuffType then
+				for _, spellSetting in ipairs(SpecSettings.spells) do
+					if spellSetting.dispels then
+						local canDispel = type(spellSetting.dispels[debuffType]) == "function" and spellSetting.dispels[debuffType]() or spellSetting.dispels[debuffType]
+						if canDispel then
+							dispellable = true
+							break
+						end
 					end
 				end
 			end
-			-- if display only dispellable debuff, check if dispellable
-			if HealiumSettings.Options.showOnlyDispellableDebuff and not filtered and SpecSettings then
-				filtered = true -- filtered by default
-				if debuffType then
-					for _, spellSetting in ipairs(SpecSettings.spells) do
-						if spellSetting.dispels then
-							local canDispel = type(spellSetting.dispels[debuffType]) == "function" and spellSetting.dispels[debuffType]() or spellSetting.dispels[debuffType]
-							if canDispel then
-								filtered = false -- dispellable debuff found
-								break
-							end
+			local filtered = false -- default: not filtered
+			if not dispellable then
+				-- non-dispellable are rejected or filtered using blacklist/whitelist
+				if HealiumSettings.Options.debuffFilter == "DISPELLABLE" then
+					filtered = true
+				elseif HealiumSettings.Options.debuffFilter == "BLACKLIST" and HealiumSettings.Options.debuffBlacklist then
+					-- blacklisted ?
+					filtered = false -- default: not filtered
+					for _, entry in ipairs(HealiumSettings.Options.debuffBlacklist) do
+						if entry.spellName == name then
+							filtered = true -- found in blacklist -> filtered
+							break
+						end
+					end
+				elseif HealiumSettings.Options.debuffFilter == "WHITELIST" and HealiumSettings.Options.debuffWhitelist then
+					-- whitelisted ?
+					filtered = true -- default: filtered
+					for _, entry in ipairs(HealiumSettings.Options.debuffWhitelist) do
+						if entry.spellName == name then
+							filtered = false -- found in whilelist -> not filtered
+							break
 						end
 					end
 				end
 			end
 			if not filtered and frame.hDebuffs then
-				-- debuff not blacklisted
+				-- debuff not filtered
 				local debuff = frame.hDebuffs[debuffIndex]
 				-- id, unit  used by tooltip
 				debuff:SetID(i)
@@ -627,7 +681,7 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 				debuffIndex = debuffIndex + 1
 				--- too many debuff?
 				if debuffIndex > MaxDebuffCount then
-					WARNING(string.format(L.healium_BUFFDEBUFF_TOOMANYDEBUFF, frame:GetName(), unit))
+					--WARNING(string.format(L.healium_BUFFDEBUFF_TOOMANYDEBUFF, frame:GetName(), unit))
 					break
 				end
 			end
@@ -677,7 +731,7 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 				for _, prereqDebuffSpellID in ipairs(spellSetting.debuffs) do
 					--DEBUG("buff prereq for "..spellSetting.spellID.." "..prereqDebuffSpellID)
 					for _, debuff in ipairs(debuffs) do
-						local debuffSpellID = debuff[1]
+						local debuffSpellID = debuff[1] -- [1] = spellID
 						--DEBUG("debuff on unit "..debuffSpellID)
 						if debuffSpellID == prereqDebuffSpellID then
 							--DEBUG("PREREQ: "..prereqDebuffSpellID.." is a debuff prereq for "..spellSetting.spellID.." "..button:GetName())
@@ -695,7 +749,7 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 			-- color dispel button if affected by a debuff curable by a player spell
 			if spellSetting.dispels and (highlightDispel or playSound or flashDispel) then
 				for _, debuff in ipairs(debuffs) do
-					local debuffType = debuff[2]
+					local debuffType = debuff[2] -- [2] = debuffType
 					--debuffType = "Curse" -- DEBUG purpose :)
 					if debuffType then
 						--DEBUG("type: "..type(spellSetting.dispels[debuffType]))
@@ -708,8 +762,8 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 								button.hDispelHighlight = debuffType
 							end
 							-- Flash dispel?
-							if flashDispel then
-								FlashFrame:ShowFlashFrame(button, debuffColor, 320, 100, true)
+							if flashDispel and UnitInRange(unit) then
+								FlashFrame:ShowFlashFrame(button, debuffColor, 320, 100, false)
 							end
 							debuffDispellableFound = true
 							break -- a debuff dispellable is enough
@@ -720,15 +774,13 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 		end
 		if debuffDispellableFound then
 			-- Play sound?
-			if playSound then
-				if UnitInRange(unit) then
-					local now = GetTime()
-					--print("DEBUFF in range: "..now.."  "..h_LastDebuffSoundTime)
-					if now > LastDebuffSoundTime + 7 then -- no more than once every 7 seconds
-						--print("DEBUFF in time")
-						PlaySoundFile(DispelSoundFile)
-						LastDebuffSoundTime = now
-					end
+			if playSound and UnitInRange(unit) then
+				local now = GetTime()
+				--print("DEBUFF in range: "..now.."  "..h_LastDebuffSoundTime)
+				if now > LastDebuffSoundTime + 7 then -- no more than once every 7 seconds
+					--print("DEBUFF in time")
+					PlaySoundFile(DispelSoundFile)
+					LastDebuffSoundTime = now
 				end
 			end
 		end
@@ -749,7 +801,6 @@ local function UpdateFrameButtons(frame)
 	if not frame.hButtons then return end
 	for i, button in ipairs(frame.hButtons) do
 		if SpecSettings and i <= #SpecSettings.spells then
-			--DEBUG("show button "..i.." "..frame:GetName())
 			local spellSetting = SpecSettings.spells[i]
 			local icon, name, type
 			if spellSetting.spellID then
@@ -769,11 +820,13 @@ local function UpdateFrameButtons(frame)
 				end
 			end
 			if type and name and icon then
+				--DEBUG("show button "..i.." "..frame:GetName().."  "..name)
 				button.texture:SetTexture(icon)
 				button:SetAttribute("type", type)
 				button:SetAttribute(type, name)
 				button.hInvalid = false
 			else
+				--DEBUG("invalid button "..i.." "..frame:GetName())
 				button.hInvalid = true
 				button.hSpellBookID = spellSetting.spellID
 				button.hMacroName = spellSetting.macroName
@@ -969,13 +1022,12 @@ local function CreateFrameButtons(frame)
 		-- name
 		local buttonName = frame:GetName().."_HealiumButton_"..i
 		-- frame
-		local button
+		local button = CreateFrame("Button", buttonName, frame, "SecureActionButtonTemplate")
+		button:CreatePanel("Default", spellSize, spellSize, "TOPLEFT", frame, "TOPRIGHT", spellSpacing, 0)
 		if i == 1 then
-			button = CreateFrame("Button", buttonName, frame, "SecureActionButtonTemplate")
-			button:CreatePanel("Default", spellSize, spellSize, "TOPLEFT", frame, "TOPRIGHT", spellSpacing, 0)
+			button:Point("TOPLEFT", frame, "TOPRIGHT", spellSpacing, 0)
 		else
-			button = CreateFrame("Button", buttonName, frame, "SecureActionButtonTemplate")
-			button:CreatePanel("Default", spellSize, spellSize, "TOPLEFT", frame.hButtons[i-1], "TOPRIGHT", spellSpacing, 0)
+			button:Point("TOPLEFT", frame.hButtons[i-1], "TOPRIGHT", spellSpacing, 0)
 		end
 		-- texture setup, texture icon is set in UpdateFrameButtons
 		button.texture = button:CreateTexture(nil, "BORDER")
@@ -1009,12 +1061,6 @@ local function CreateFrameButtons(frame)
 		button.hInvalid = true
 		-- hide
 		button:Hide()
-		-- ++ BORDER TEST
-		--local r, g, b, a = button:GetBackdropColor()
-		--print("BACKDROP:"..tostring(r)..","..tostring(g)..","..tostring(b)..","..tostring(a))
-		--r, g, b, a = button:GetBackdropBorderColor()
-		--print("BORDER"..tostring(r)..","..tostring(g)..","..tostring(b)..","..tostring(a))
-		-- -- BORDER TEST
 		-- save button
 		tinsert(frame.hButtons, button)
 	end
@@ -1034,15 +1080,12 @@ local function CreateFrameDebuffs(frame)
 		-- name
 		local debuffName = frame:GetName().."_HealiumDebuff_"..i
 		-- frame
-		local debuff
+		local debuff = CreateFrame("Frame", debuffName, frame) -- --debuff = CreateFrame("Frame", debuffName, frame, "TargetDebuffFrameTemplate")
+		debuff:CreatePanel("Default", debuffSize, debuffSize, "TOPLEFT", frame, "TOPRIGHT", debuffSpacing, 0)
 		if i == 1 then
-			--debuff = CreateFrame("Frame", debuffName, frame, "TargetDebuffFrameTemplate")
-			debuff = CreateFrame("Frame", debuffName, frame)
-			debuff:CreatePanel("Default", debuffSize, debuffSize, "TOPLEFT", frame, "TOPRIGHT", debuffSpacing, 0)
+			debuff:Point("TOPLEFT", frame, "TOPRIGHT", debuffSpacing, 0)
 		else
-			--debuff = CreateFrame("Frame", debuffName, frame, "TargetDebuffFrameTemplate")
-			debuff = CreateFrame("Frame", debuffName, frame)
-			debuff:CreatePanel("Default", debuffSize, debuffSize, "TOPLEFT", frame.hDebuffs[i-1], "TOPRIGHT", debuffSpacing, 0)
+			debuff:Point("TOPLEFT", frame.hDebuffs[i-1], "TOPRIGHT", debuffSpacing, 0)
 		end
 		-- icon
 		debuff.icon = debuff:CreateTexture(nil, "ARTWORK")
@@ -1083,15 +1126,12 @@ local function CreateFrameBuffs(frame)
 	local buffSpacing = 2
 	for i = 1, MaxBuffCount, 1 do
 		local buffName = frame:GetName().."_HealiumBuff_"..i
-		local buff
+		local buff = CreateFrame("Frame", buffName, frame) --buff = CreateFrame("Frame", buffName, frame, "TargetBuffFrameTemplate")
+		buff:CreatePanel("Default", buffSize, buffSize, "TOPRIGHT", frame, "TOPLEFT", -buffSpacing, 0)
 		if i == 1 then
-			--buff = CreateFrame("Frame", buffName, frame, "TargetBuffFrameTemplate")
-			buff = CreateFrame("Frame", buffName, frame)
-			buff:CreatePanel("Default", buffSize, buffSize, "TOPRIGHT", frame, "TOPLEFT", -buffSpacing, 0)
+			buff:Point("TOPRIGHT", frame, "TOPLEFT", -buffSpacing, 0)
 		else
-			--buff = CreateFrame("Frame", buffName, frame, "TargetBuffFrameTemplate")
-			buff = CreateFrame("Frame", buffName, frame)
-			buff:CreatePanel("Default", buffSize, buffSize, "TOPRIGHT", frame.hBuffs[i-1], "TOPLEFT", -buffSpacing, 0)
+			buff:Point("TOPRIGHT", frame.hBuffs[i-1], "TOPLEFT", -buffSpacing, 0)
 		end
 		-- icon
 		buff.icon = buff:CreateTexture(nil, "ARTWORK")
@@ -1445,6 +1485,7 @@ SlashCmdList["THLM"] = function(cmd)
 		Message(SLASH_THLM1..L.healium_CONSOLE_HELP_DUMPGENERAL)
 		Message(SLASH_THLM1..L.healium_CONSOLE_HELP_DUMPUNIT)
 		Message(SLASH_THLM1..L.healium_CONSOLE_HELP_DUMPPERF)
+		Message(SLASH_THLM1..L.healium_CONSOLE_HELP_DUMPSHOW)
 		Message(SLASH_THLM1..L.healium_CONSOLE_HELP_RESETPERF)
 		Message(SLASH_THLM1..L.healium_CONSOLE_HELP_REFRESH)
 	end
@@ -1472,25 +1513,36 @@ SlashCmdList["THLM"] = function(cmd)
 			else
 				local timespan = GetTime() - LastPerformanceCounterReset
 				local header = "Performance counters. Elapsed=%.2fsec"
-				local line = "%s=%d -> %.2f/sec"
+				local line = "%s=#%d L:%.4f  H:%.2f -> %.2f/sec"
 				DumpSack:Add(header:format(timespan))
 				for key, value in pairs(counters) do
-					DumpSack:Add(line:format(key,value,value/timespan))
+					local count = value.count or 1
+					local lowestSpan = value.lowestSpan or 0
+					local highestSpan = value.highestSpan or 0
+					DumpSack:Add(line:format(key, count, lowestSpan, highestSpan, count/timespan))
 				end
 				DumpSack:Flush("TukuiHealium")
 			end
+		elseif args == "show" then
+			DumpSack:Show()
 		else
-			local frame = GetFrameFromUnit(args) -- Get frame from unit
-			if frame then
-				DumpFrame(frame)
-				DumpSack:Flush("TukuiHealium")
-			else
+			--local frame = GetFrameFromUnit(args) -- Get frame from unit
+			local found = false
+			for _, frame in ipairs(Unitframes) do
+				if frame.unit == args then
+					DumpFrame(frame)
+					DumpSack:Flush("TukuiHealium")
+					found = true
+					break
+				end
+			end
+			if not found then
 				Message(string.format(L.healium_CONSOLE_DUMP_UNITNOTFOUND,args))
 			end
 		end
 	elseif switch == "reset" then
 		if args == "perf" then
-			PerformanceCounter:Reset()
+			PerformanceCounter:Reset("TukuiHealium")
 			LastPerformanceCounterReset = GetTime()
 			Message(L.healium_CONSOLE_RESET_PERF)
 		end
@@ -1518,15 +1570,26 @@ end
 -------------------------------------------------------
 -- Main
 -------------------------------------------------------
--- Remove non-class specific spell-list
-local idx = 1
-while idx <= #HealiumSettings do
+for class in pairs(HealiumSettings) do
 	if class ~= T.myclass and class ~= "Options" then
-		print("REMOVING class from settings")
-		tremove(classToRemove, 1)
-	else
-		idx = idx+1
+		HealiumSettings[class] = nil
+		--DEBUG("REMOVING "..class.." from settings")
 	end
+end
+
+-- Fill blacklist and whitelist with spellName instead of spellID
+if HealiumSettings.Options.debuffBlacklist and HealiumSettings.Options.debuffFilter == "BLACKLIST" then
+	HealiumSettings.Options.debuffBlacklist = CreateDebuffFilterList("debuffBlacklist", HealiumSettings.Options.debuffBlacklist)
+else
+	--DEBUG("Clearing debuffBlacklist")
+	HealiumSettings.Options.debuffBlacklist = nil
+end
+
+if HealiumSettings.Options.debuffWhitelist and HealiumSettings.Options.debuffFilter == "WHITELIST" then
+	HealiumSettings.Options.debuffWhitelist = CreateDebuffFilterList("debuffWhitelist", HealiumSettings.Options.debuffWhitelist)
+else
+	--DEBUG("Clearing debuffWhitelist")
+	HealiumSettings.Options.debuffWhitelist = nil
 end
 
 -- Register style

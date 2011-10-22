@@ -19,6 +19,7 @@ if T.client == "frFR" then
 	L.healium_CONSOLE_HELP_DUMPGENERAL = " dump          - affiche les informations \195\160 propos des Fen\195\170tres Healium"
 	L.healium_CONSOLE_HELP_DUMPUNIT =    " dump [unit]   - affiche les informations \195\160 propos d'une unit\195\169"
 	L.healium_CONSOLE_HELP_DUMPPERF =    " dump perf     - affiche les compteurs de performance"
+	L.healium_CONSOLE_HELP_DUMPSHOW =    " dump show     - affiche la en\195\170tre de dump"
 	L.healium_CONSOLE_HELP_RESETPERF =   " reset perf    - remet \195\160 z\195\169ro les compteurs de performance"
 	L.healium_CONSOLE_HELP_REFRESH =     " refresh       - r\195\169initialise toutes les fen\195\170tres Healium"
 	L.healium_CONSOLE_DEBUG_ENABLED = "Mode debug activ\195\169"
@@ -27,4 +28,6 @@ if T.client == "frFR" then
 	L.healium_CONSOLE_RESET_PERF = "Les compteurs de performance ont \195\169t\195\169 remis \195\160 z\195\169ro"
 	L.healium_CONSOLE_REFRESH_NOTINCOMBAT = "Impossible durant un combat"
 	L.healium_CONSOLE_REFRESH_OK = "Fen\195\170tres Healium r\195\169initialis\195\169es"
+	L.healium_SETTINGS_UNKNOWNBUFFDEBUFF = "SpellID %d inconnu dans %s"
+	L.healium_SETTINGS_DUPLICATEBUFFDEBUFF = "SpellID %d et %d sont le m\195\170me buff/debuff (%s) dans %s"
 end

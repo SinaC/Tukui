@@ -1,3 +1,77 @@
+-- local COLORTABLE = {
+	-- white = {r=1.0, g=1.0, b=1.0},
+	-- yellow = YELLOW_FONT_COLOR,
+	-- purple = {r=1.0, g=0.0, b=1.0},
+	-- blue = {r=0.0, g=0.0, b=1.0},
+	-- orange = ORANGE_FONT_COLOR,
+	-- aqua = {r=0.0, g=1.0, b=1.0},
+	-- green = GREEN_FONT_COLOR,
+	-- red = RED_FONT_COLOR,
+	-- pink = {r=0.9, g=0.4, b=0.4},
+	-- gray = GRAY_FONT_COLOR,
+-- }
+
+-- local function FlashFrameOnUpdate(self, elapsed)
+	-- self.TimeSinceLastUpdate = self.TimeSinceLastUpdate + elapsed
+	-- if self.TimeSinceLastUpdate >= self.UpdateInterval then
+		-- self.modifier = self.FlashModifier
+		-- self.FlashModifier = self.modifier - self.modifier * self.TimeSinceLastUpdate
+		-- self.TimeSinceLastUpdate = 0
+		-- self.alpha = self.FlashModifier * self.FlashBrightness
+		-- if self.modifier < 0.1 or self.alpha <= 0 then
+			-- self:Hide()
+		-- else
+			-- self.FlashTexture:SetHeight(self.modifier * self:GetHeight() * self.FlashSize)
+			-- self.FlashTexture:SetWidth(self.modifier * self:GetWidth() * self.FlashSize)
+			-- self.FlashTexture:SetAlpha(self.alpha)
+		-- end
+	-- end
+-- end
+
+-- local FlashFrameName = "SpellFlashCoreAddonFlashFrame"
+
+-- function SpellFlashCore.FlashFrame(frame, color, size, brightness, blink)
+	-- if frame and frame:IsVisible() then
+		-- if blink and frame:GetName() and not UIFrameIsFading(frame) then
+			-- UIFrameFlash(frame, 0, 0.2, 0.2, true, 0, 0)
+		-- end
+		-- if not frame[FlashFrameName] then
+			-- frame[FlashFrameName] = CreateFrame("Frame", nil, frame)
+			-- frame[FlashFrameName]:Hide()
+			-- frame[FlashFrameName]:SetAllPoints(frame)
+			-- frame[FlashFrameName].FlashTexture = frame[FlashFrameName]:CreateTexture(nil, "OVERLAY")
+			-- frame[FlashFrameName].FlashTexture:SetTexture("Interface\\Cooldown\\star4")
+			-- frame[FlashFrameName].FlashTexture:SetPoint("CENTER", frame[FlashFrameName], "CENTER")
+			-- frame[FlashFrameName].FlashTexture:SetBlendMode("ADD")
+			-- frame[FlashFrameName]:SetAlpha(1)
+			-- frame[FlashFrameName].UpdateInterval = 0.02
+			-- frame[FlashFrameName].TimeSinceLastUpdate = 0
+			-- frame[FlashFrameName]:SetScript("OnUpdate", FlashFrameOnUpdate)
+		-- end
+		-- frame[FlashFrameName].FlashModifier = 1
+		-- frame[FlashFrameName].FlashSize = (size or 240) / 100
+		-- frame[FlashFrameName].FlashBrightness = (brightness or 100) / 100
+		-- frame[FlashFrameName].FlashTexture:SetAlpha(1 * frame[FlashFrameName].FlashBrightness)
+		-- frame[FlashFrameName].FlashTexture:SetHeight(frame[FlashFrameName]:GetHeight() * frame[FlashFrameName].FlashSize)
+		-- frame[FlashFrameName].FlashTexture:SetWidth(frame[FlashFrameName]:GetWidth() * frame[FlashFrameName].FlashSize)
+		-- if type(color) == "table" then
+			-- frame[FlashFrameName].FlashTexture:SetVertexColor(color.r or 1, color.g or 1, color.b or 1)
+		-- elseif type(color) == "string" then
+			-- local color = COLORTABLE[color:lower()]
+			-- if color then
+				-- frame[FlashFrameName].FlashTexture:SetVertexColor(color.r or 1, color.g or 1, color.b or 1)
+			-- else
+				-- frame[FlashFrameName].FlashTexture:SetVertexColor(1, 1, 1)
+			-- end
+		-- else
+			-- frame[FlashFrameName].FlashTexture:SetVertexColor(1, 1, 1)
+		-- end
+		-- frame[FlashFrameName]:Show()
+		-- return true
+	-- end
+	-- return false
+-- end
+
 -----------------------------------------------------
 -- Flash Frame
 
@@ -24,6 +98,7 @@ local function CreateFlashFrame(frame)
 	frame.hFlashFrame.texture:SetBlendMode("ADD")
 	frame.hFlashFrame:SetAlpha(1)
 	frame.hFlashFrame.updateInterval = 0.02
+	frame.hFlashFrame.lastFlashTime = 0
 	frame.hFlashFrame.timeSinceLastUpdate = 0
 	frame.hFlashFrame:SetScript("OnUpdate", function (self, elapsed)
 		if not self:IsShown() then return end
@@ -60,6 +135,11 @@ function FlashFrame:ShowFlashFrame(frame, color, size, brightness, blink)
 	if blink and frame:GetName() and not UIFrameIsFading(frame) then
 		UIFrameFlash(frame, 0, 0.2, 0.2, true, 0, 0)
 	end
+
+	-- Dont flash too often
+	local now = GetTime()
+	if now - frame.hFlashFrame.lastFlashTime < 1 then return end
+	frame.hFlashFrame.lastFlashTime = now
 
 	-- Show flash frame
 	frame.hFlashFrame.flashModifier = 1
