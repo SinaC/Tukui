@@ -66,6 +66,18 @@
 
 -- TO TEST:
 -- ========
+-- addon CPU profiling  http://wow.curseforge.com/addons/addon-profiler/   http://www.wowinterface.com/downloads/info13888-AddonProfiler.html
+-- OOM (cpu), CD (cpu), buff/debuff (memory/gc) optimization -> SEEMS TO WORK
+--	CD optimisation:
+-- 	if in raid 1 with 3 spells, when casting an instant with a CD
+-- 		before: 3*1 + 3*1 + 3*1 = 9 calls to UpdateButtonCooldown
+--		now: 3*1 + 1*1 + 0*1 = 4 calls to UpdateButtonCooldown
+--	if in raid 10 with 3 spells,
+--		before: 3*10 + 3*10 + 3*10 = 90 calls
+--		now: 3*10 + 1*10 + 0 = 40 calls
+--	if in raid 10, with 9 spells,
+--		before: 9*10 + 9*10 + 9*10 = 270 calls
+--		after: 9*10 + 1*10 + 0 = 100
 
 -- ISSUES:
 -- =======
@@ -77,7 +89,6 @@
 -- resize frame (smaller height) when raid > 15
 -- dump perf: sort on count
 -- use spellName everywhere instead of spellID
--- addon CPU profiling  http://wow.curseforge.com/addons/addon-profiler/   http://www.wowinterface.com/downloads/info13888-AddonProfiler.html
 -- Tank frame (attributes: [["groupFilter", "MAINTANK,TANK"]],  [["groupBy", "ROLE"]],    showParty, showRaid but not showSolo)
 -- pet spells
 -- optimize UpdateCooldown (no need to call it more than once every 0.2sec, maybe not needed to update if already running), OOM, OOR ... in general way, don't call ForEachMembers(UpdateButtonsColor) so often
@@ -133,7 +144,7 @@ local DispelSoundFile = "Sound\\Doodad\\BellTollHorde.wav"
 -------------------------------------------------------
 local DelayedButtonsCreation = {}
 local Unitframes = {}
-local LastDebuffSoundTime = GetTime()
+local listDebuffsoundTime = GetTime()
 local SpecSettings = nil
 local LastPerformanceCounterReset = GetTime()
 --local HighestCost = 0
@@ -432,7 +443,6 @@ local function UpdateButtonOOR(frame, index, spellName)
 	if not frame.hButtons then return end
 	DEBUG("UpdateButtonOOR")
 	local button = frame.hButtons[index]
-	--if not button then return end
 	local inRange = IsSpellInRange(spellName, frame.unit)
 	if not inRange or inRange == 0 then
 		button.hOOR = true
@@ -515,6 +525,8 @@ local function UpdateFrameDebuffsPosition(frame)
 end
 
 -- Update healium frame buff/debuff and prereq
+local listBuffs = {}
+local listDebuffs = {}
 local function UpdateFrameBuffsDebuffsPrereqs(frame)
 	PerformanceCounter:Increment("TukuiHealium", "UpdateFrameBuffsDebuffsPrereqs")
 	local unit = frame.unit
@@ -532,15 +544,20 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 	end
 	
 	-- buff: parse buff even if showDebuff is set to false for prereq
-	local buffs = {} -- list of spellID
+	--local buffs = {} -- list of spellID
+	local buffCount = 0
 	if not frame.hDisabled then
 		local buffIndex = 1
 		if SpecSettings then
 			for i = 1, 40, 1 do
 				-- get buff
 				name, _, icon, count, _, duration, expirationTime, _, _, _, spellID = UnitAura(unit, i, "PLAYER|HELPFUL")
-				if not name then break end
-				tinsert(buffs, spellID) -- display only buff castable by player but keep whole list of buff to check prereq
+				if not name then 
+					buffCount = i-1
+					break 
+				end
+				--tinsert(buffs, spellID) -- display only buff castable by player but keep whole list of buff to check prereq
+				listBuffs[i] = spellID
 				-- is buff casted by player and in spell list?
 				local found = false
 				for index, spellSetting in ipairs(SpecSettings.spells) do
@@ -600,17 +617,23 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 	end
 
 	-- debuff: parse debuff even if showDebuff is set to false for prereq
-	local debuffs = {} -- list of couple (spellID, debuffType)
+	--local debuffs = {} -- list of couple (spellID, debuffType)
+	local debuffCount = 0
 	local debuffIndex = 1
 	if SpecSettings or HealiumSettings.Options.showDebuff then
 		for i = 1, 40, 1 do
 			-- get debuff
 			local name, _, icon, count, debuffType, duration, expirationTime, _, _, _, spellID = UnitDebuff(unit, i)
-			if not name then break end
+			if not name then
+				debuffCount = i-1
+				break
+			end
+			--debuffType = "Poison" -- DEBUG purpose :)
 			-- if debuffType then
 				-- DEBUG("debuffType: "..debuffType)
 			-- end
-			tinsert(debuffs, {spellID, debuffType}) -- display not filtered debuff but keep whole debuff list to check prereq
+			--tinsert(debuffs, {spellID, debuffType}) -- display not filtered debuff but keep whole debuff list to check prereq
+			listDebuffs[i] = {spellID, debuffType}
 			local dispellable = false -- default: non-dispellable
 			if debuffType then
 				for _, spellSetting in ipairs(SpecSettings.spells) do
@@ -695,6 +718,8 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 		end
 	end
 
+	--DEBUG("BUFF:"..buffCount.."  DEBUFF:"..debuffCount)
+
 	-- color dispel button if dispellable debuff + prereqs management (is buff or debuff a prereq to enable/disable a spell)
 	if SpecSettings and frame.hButtons and not frame.hDisabled then
 		local debuffDispellableFound = false
@@ -709,9 +734,11 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 				local prereqBuffFound = false
 				for _, prereqBuffSpellID in ipairs(spellSetting.buffs) do
 					--DEBUG("buff prereq for "..spellSetting.spellID.." "..prereqBuffSpellID)
-					for _, buffSpellID in pairs(buffs) do
+					--for _, buff in pairs(listBuffs) do
+					for i = 1, buffCount, 1 do
+						local buff = listBuffs[i]
 						--DEBUG("buff on unit "..buffSpellID)
-						if buffSpellID == prereqBuffSpellID then
+						if buff == prereqBuffSpellID then
 							--DEBUG("PREREQ: "..prereqBuffSpellID.." is a buff prereq for "..spellSetting.spellID.." "..button:GetName())
 							prereqBuffFound = true
 							break
@@ -730,7 +757,9 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 				local prereqDebuffFound = false
 				for _, prereqDebuffSpellID in ipairs(spellSetting.debuffs) do
 					--DEBUG("buff prereq for "..spellSetting.spellID.." "..prereqDebuffSpellID)
-					for _, debuff in ipairs(debuffs) do
+					--for _, debuff in ipairs(listDebuffs) do
+					for i = 1, debuffCount, 1 do
+						local debuff = listDebuffs[i]
 						local debuffSpellID = debuff[1] -- [1] = spellID
 						--DEBUG("debuff on unit "..debuffSpellID)
 						if debuffSpellID == prereqDebuffSpellID then
@@ -748,9 +777,10 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 			end
 			-- color dispel button if affected by a debuff curable by a player spell
 			if spellSetting.dispels and (highlightDispel or playSound or flashDispel) then
-				for _, debuff in ipairs(debuffs) do
+				--for _, debuff in ipairs(listDebuffs) do
+				for i = 1, debuffCount, 1 do
+					local debuff = listDebuffs[i]
 					local debuffType = debuff[2] -- [2] = debuffType
-					--debuffType = "Curse" -- DEBUG purpose :)
 					if debuffType then
 						--DEBUG("type: "..type(spellSetting.dispels[debuffType]))
 						local canDispel = type(spellSetting.dispels[debuffType]) == "function" and spellSetting.dispels[debuffType]() or spellSetting.dispels[debuffType]
@@ -776,11 +806,11 @@ local function UpdateFrameBuffsDebuffsPrereqs(frame)
 			-- Play sound?
 			if playSound and UnitInRange(unit) then
 				local now = GetTime()
-				--print("DEBUFF in range: "..now.."  "..h_LastDebuffSoundTime)
-				if now > LastDebuffSoundTime + 7 then -- no more than once every 7 seconds
+				--print("DEBUFF in range: "..now.."  "..h_listDebuffsoundTime)
+				if now > listDebuffsoundTime + 7 then -- no more than once every 7 seconds
 					--print("DEBUFF in time")
 					PlaySoundFile(DispelSoundFile)
-					LastDebuffSoundTime = now
+					listDebuffsoundTime = now
 				end
 			end
 		end
@@ -846,6 +876,7 @@ local function UpdateFrameButtons(frame)
 end
 
 -- For each spell, get cooldown then loop among Healium Unitframes and set cooldown
+local lastCD = {}
 local function UpdateCooldowns()
 	PerformanceCounter:Increment("TukuiHealium", "UpdateCooldowns")
 	--DEBUG("UpdateCooldowns")
@@ -863,25 +894,28 @@ local function UpdateCooldowns()
 			end
 		end
 		if start and start > 0 then
-			ForEachMember(UpdateButtonCooldown, index, start, duration, enabled)
-			-- ForEachMember(
-				-- function(frame, index, start, duration, enabled)
-					-- PerformanceCounter:Increment("TukuiHealium", "UpdateButtonCooldown")
-					-- if not frame.hButtons then return end
-					-- local button = frame.hButtons[index]
-					-- CooldownFrame_SetTimer(button.cooldown, start, duration, enabled)
-				-- end,
-				-- index, start, duration, enabled)
+			local arrayEntry = lastCD[index]
+			if not arrayEntry or arrayEntry.start ~= start or arrayEntry.duration ~= duration then
+				--DEBUG("CD KEEP:"..index.."  "..start.."  "..duration.."  /  "..(arrayEntry and arrayEntry.start or 'nil').."  "..(arrayEntry and arrayEntry.duration or 'nil'))
+				ForEachMember(UpdateButtonCooldown, index, start, duration, enabled)
+				lastCD[index] = { start = start, duration = duration }
+			else
+				--DEBUG("CD SKIP:"..index.."  "..start.."  "..duration.."  /  "..(arrayEntry and arrayEntry.start or 'nil').."  "..(arrayEntry and arrayEntry.duration or 'nil'))
+			end
+		-- else
+			-- DEBUG("CD: skipping:"..index)
 		end
 	end
 end
 
 -- Check OOM spells
+local lastOOM = {}
 local function UpdateOOMSpells()
 	PerformanceCounter:Increment("TukuiHealium", "UpdateOOMSpells")
 	if not HealiumSettings.Options.showOOM then return end
 	--DEBUG("UpdateOOMSpells")
 	if not SpecSettings then return end
+	local change = false -- TODO: remove this flag by calling a new method ForEachMember(UpdateButtonColor, frame, index) -- update frame.hButtons[index] color
 	for index, spellSetting in ipairs(SpecSettings.spells) do
 		local spellName
 		if spellSetting.spellID then
@@ -895,19 +929,18 @@ local function UpdateOOMSpells()
 		if spellName then
 			--DEBUG("spellName:"..spellName)
 			local OOM = select(2, IsUsableSpell(spellName))
-			ForEachMember(UpdateButtonOOM, index, OOM)
-			-- ForEachMember(
-				-- function(frame, index, OOM)
-					-- PerformanceCounter:Increment("TukuiHealium", "UpdateButtonOOM")
-					-- if not frame.hButtons then return end
-					-- local button = frame.hButtons[index]
-					-- if not button then return end
-					-- button.hOOM = OOM
-				-- end,
-				-- index, OOM)
+			if lastOOM[index] ~= OOM then
+				local change = true
+				lastOOM[index] = OOM
+				ForEachMember(UpdateButtonOOM, index, OOM)
+			-- else
+				-- DEBUG("Skipping UpdateButtonOOM:"..index)
+			end
 		end
 	end
-	ForEachMember(UpdateButtonsColor)
+	if change then
+		ForEachMember(UpdateButtonsColor)
+	end
 end
 
 -- Check OOR spells
@@ -929,19 +962,6 @@ local function UpdateOORSpells()
 		if spellName then
 			--DEBUG("spellName:"..spellName)
 			ForEachMember(UpdateButtonOOR, index, spellName)
-			-- ForEachMember(
-				-- function(frame, index, spellName)
-					-- PerformanceCounter:Increment("TukuiHealium", "UpdateButtonOOR")
-					-- local button = frame.hButtons[index]
-					-- if not button then return end
-					-- local inRange = IsSpellInRange(spellName, frame.unit)
-					-- if not inRange or inRange == 0 then
-						-- button.hOOR = true
-					-- else
-						-- button.hOOR = false
-					-- end
-				-- end,
-				-- index, spellName)
 		end
 	end
 	ForEachMember(UpdateButtonsColor)
@@ -1448,6 +1468,7 @@ local function OnEvent(self, event, arg1, arg2, arg3)
 		-- -- ForEachMember(UpdateFrameDebuffsPosition)
 	-- end
 	elseif event == "SPELL_UPDATE_COOLDOWN" then -- TODO: use SPELL_UPDATE_USABLE instead ?
+		--DEBUG("SPELL_UPDATE_COOLDOWN:"..tostring(arg1).."  "..tostring(arg2).."  "..tostring(arg2))
 		UpdateCooldowns()
 	elseif event == "UNIT_AURA" then
 		local frame = GetFrameFromUnit(arg1) -- Get frame from unit
@@ -1457,7 +1478,7 @@ local function OnEvent(self, event, arg1, arg2, arg3)
 --			-- Update only if not enough power to cast the most expensive spell -> crappy optimisation, a druid will never have enough energy to cast healing spell
 --			local currentValue = UnitPower("player")
 --			if currentValue <= HighestCost then
-				UpdateOOMSpells()
+			UpdateOOMSpells()
 --			end
 		end
 	end
@@ -1621,7 +1642,7 @@ oUF:Factory(function(self)
 		"yOffset", T.Scale(-4))
 	playerRaid:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 150, -300*T.raidscale)
 
-	-- Pets
+	-- Pets, no pets in a group with 10 or more players
 	if HealiumSettings.Options.showPets then
 		local petRaid = self:SpawnHeader("oUF_TukuiHealiumRaidPet0125", "SecureGroupPetHeaderTemplate", "custom [@raid11,exists] hide;show",
 			'oUF-initialConfigFunction', [[

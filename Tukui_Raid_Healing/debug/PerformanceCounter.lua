@@ -23,12 +23,13 @@ function PerformanceCounter:Increment(addonName, fctName)
 	if not entry then
 		addonSection[fctName] = { count = 1, lastTime = GetTime() }
 	else
-		local diff = currentTime - entry.lastTime
+		local cnt = (entry.count or 0) + 1
+		local diff = currentTime - (entry.lastTime or currentTime)
 		local lowestDiff = entry.lowestSpan or 999999
 		if diff < lowestDiff then lowestDiff = diff end
 		local highestDiff = entry.highestSpan or 0
 		if diff > highestDiff then highestDiff = diff end
-		addonSection[fctName] = { count = entry.count + 1, lastTime = currentTime, lowestSpan = lowestDiff, highestSpan = highestDiff }
+		addonSection[fctName] = { count = cnt, lastTime = currentTime, lowestSpan = lowestDiff, highestSpan = highestDiff }
 	end
 end
 
@@ -58,10 +59,11 @@ function PerformanceCounter:Reset(addonName)
 			Reset(addon)
 		end
 	else
-		local addonEntry = counters[addonName]
-		if not addonEntry then return end
-		for key, _ in pairs(addonEntry) do
-			addonEntry[key] = {}
-		end
+		-- local addonEntry = counters[addonName]
+		-- if not addonEntry then return end
+		-- for key, _ in pairs(addonEntry) do
+			-- addonEntry[key] = {}
+		-- end
+		counters[addonName] = {}
 	end
 end

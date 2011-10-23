@@ -16,14 +16,15 @@ HealiumSettings = {
 		flashDispel = true, -- flash dispel button when debuff is dispellable (no matter they are shown or not)
 		showPercentage = true, -- show health percentage instead of health value
 		showButtonTooltip = true, -- display heal buttons tooltip
-		showBuffDebuffTooltip = true, -- display buff and debuff tooltip
+		showBuffDebuffTooltip = false, -- display buff and debuff tooltip
 		showOOM = true, -- color heal button in blue when OOM
 		showOOR = false, -- very time consuming and not really useful (Tukui already has per unitframe out-of-range)
 		debuffBlacklist = { -- see debuffFilter
-			57724,	-- Berserk
+			--6788,	-- Weakened Soul
+			--57724,	-- Berserk
 			57723,	-- Time Warp
 			80354,	-- Ancient Hysteria
-			36032,	-- Arcane Blast
+			--36032,	-- Arcane Blast
 			95223,	-- Recently Mass Resurrected
 			26013,	-- Deserter
 			71041,	-- Dungeon Deserter
@@ -287,6 +288,11 @@ HealiumSettings = {
 		[3] = { -- Restoration
 			-- TEST MODE
 			-- spells = {
+				-- { spellID = 61295, buffs = { 974 } }, -- Riptide
+				-- { spellID = 331, buffs = { 61295 } }, -- Healing Wave
+				-- { spellID = 51886, dispels = { ["Curse"] = true, ["Magic"] = function() return select(5, GetTalentInfo(3,12)) > 0 end } }, -- Cleanse Spirit
+			-- },
+			-- spells = {
 				-- { spellID = 974, debuffs = { 57724 } }, -- Earth Shield
 				-- { spellID = 61295, buffs = { 974 } }, -- Riptide
 				-- { spellID = 331, buffs = { 61295 } }, -- Healing Wave
@@ -403,10 +409,10 @@ HealiumSettings = {
 			spells = {
 				{ spellID = 475, debuffs = { 36032 } }, -- Remove Curse (Mage)
 			-- TEST MODE
-				-- { spellID = 475, dispels = { ["Curse"] = true } }, -- Remove Curse (Mage)
-				-- { spellID = 51886, dispells = { ["Curse"] = true } }, -- Cleanse Spirit (Shaman)
-				-- { spellID = 475, buffs = { 6117 } }, -- Remove Curse (Mage)
-				-- { spellID = 475, dispels = { ["Poison"] = true, ["Disease"] = true, ["Magic"] = function() return select(5, GetTalentInfo(1,14)) > 0 end } }, -- TEST
+				{ spellID = 475, dispels = { ["Curse"] = true } }, -- Remove Curse (Mage)
+				{ spellID = 51886, dispells = { ["Curse"] = true } }, -- Cleanse Spirit (Shaman)
+				{ spellID = 475, buffs = { 6117 } }, -- Remove Curse (Mage)
+				{ spellID = 475, dispels = { ["Poison"] = true, ["Disease"] = true, ["Magic"] = function() return select(5, GetTalentInfo(1,14)) > 0 end } }, -- TEST
 			},
 		}
 	},

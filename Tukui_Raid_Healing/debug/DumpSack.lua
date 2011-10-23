@@ -16,7 +16,7 @@ local T, C, L = unpack(Tukui) -- Import: T - functions, constants, variables; C 
 DumpSack = {}
 
 -- Local variables
-local window
+local window = nil
 local textArea
 local nextButton
 local prevButton
@@ -192,8 +192,8 @@ function DumpSack:Flush(addonName)
 end
 
 function DumpSack:Show()
-	UpdateDumpSackDisplay()
 	if not window or window:IsShown() then return end
+	UpdateDumpSackDisplay()
 	window:Show()
 end
 
