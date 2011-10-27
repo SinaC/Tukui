@@ -85,22 +85,22 @@ FlashFrame = {}
 -- Create flash frame on a frame
 local function CreateFlashFrame(frame)
 	--if not HealiumSettings.flashDispel then return end
-	if frame.hFlashFrame then return end
+	if frame.ffFlashFrame then return end
 
 	--print("CreateFlashFrame")
 
-	frame.hFlashFrame = CreateFrame("Frame", nil, frame)
-	frame.hFlashFrame:Hide()
-	frame.hFlashFrame:SetAllPoints(frame)
-	frame.hFlashFrame.texture = frame.hFlashFrame:CreateTexture(nil, "OVERLAY")
-	frame.hFlashFrame.texture:SetTexture("Interface\\Cooldown\\star4")
-	frame.hFlashFrame.texture:SetPoint("CENTER", frame.hFlashFrame, "CENTER")
-	frame.hFlashFrame.texture:SetBlendMode("ADD")
-	frame.hFlashFrame:SetAlpha(1)
-	frame.hFlashFrame.updateInterval = 0.02
-	frame.hFlashFrame.lastFlashTime = 0
-	frame.hFlashFrame.timeSinceLastUpdate = 0
-	frame.hFlashFrame:SetScript("OnUpdate", function (self, elapsed)
+	frame.ffFlashFrame = CreateFrame("Frame", nil, frame)
+	frame.ffFlashFrame:Hide()
+	frame.ffFlashFrame:SetAllPoints(frame)
+	frame.ffFlashFrame.texture = frame.ffFlashFrame:CreateTexture(nil, "OVERLAY")
+	frame.ffFlashFrame.texture:SetTexture("Interface\\Cooldown\\star4")
+	frame.ffFlashFrame.texture:SetPoint("CENTER", frame.ffFlashFrame, "CENTER")
+	frame.ffFlashFrame.texture:SetBlendMode("ADD")
+	frame.ffFlashFrame:SetAlpha(1)
+	frame.ffFlashFrame.updateInterval = 0.02
+	frame.ffFlashFrame.lastFlashTime = 0
+	frame.ffFlashFrame.timeSinceLastUpdate = 0
+	frame.ffFlashFrame:SetScript("OnUpdate", function (self, elapsed)
 		if not self:IsShown() then return end
 		self.timeSinceLastUpdate = self.timeSinceLastUpdate + elapsed
 		if self.timeSinceLastUpdate >= self.updateInterval then
@@ -117,7 +117,7 @@ local function CreateFlashFrame(frame)
 				self.texture:SetHeight(oldModifier * self:GetHeight() * self.flashSize)
 				self.texture:SetWidth(oldModifier * self:GetWidth() * self.flashSize)
 				self.texture:SetAlpha(self.alpha)
-				--print("UPDATE:"..frame.hFlashFrame.texture:GetHeight().."  "..frame.hFlashFrame.texture:GetWidth().."  "..self.alpha)
+				--print("UPDATE:"..frame.ffFlashFrame.texture:GetHeight().."  "..frame.ffFlashFrame.texture:GetWidth().."  "..self.alpha)
 			end
 		end
 	end)
@@ -126,8 +126,8 @@ end
 -- Show flash frame
 function FlashFrame:ShowFlashFrame(frame, color, size, brightness, blink)
 	--print("ShowFlashFrame")
-	--if not frame.hFlashFrame then return end
-	if not frame.hFlashFrame then
+	--if not frame.ffFlashFrame then return end
+	if not frame.ffFlashFrame then
 		-- Create flash frame on-the-fly
 		CreateFlashFrame(frame)
 	end
@@ -138,38 +138,69 @@ function FlashFrame:ShowFlashFrame(frame, color, size, brightness, blink)
 
 	-- Dont flash too often
 	local now = GetTime()
-	if now - frame.hFlashFrame.lastFlashTime < 1 then return end
-	frame.hFlashFrame.lastFlashTime = now
+	if now - frame.ffFlashFrame.lastFlashTime < 1 then return end
+	frame.ffFlashFrame.lastFlashTime = now
 
 	-- Show flash frame
-	frame.hFlashFrame.flashModifier = 1
-	frame.hFlashFrame.flashSize = (size or 240) / 100
-	frame.hFlashFrame.flashBrightness = (brightness or 100) / 100
-	frame.hFlashFrame.texture:SetAlpha(1 * frame.hFlashFrame.flashBrightness)
-	frame.hFlashFrame.texture:SetHeight(frame.hFlashFrame:GetHeight() * frame.hFlashFrame.flashSize)
-	frame.hFlashFrame.texture:SetWidth(frame.hFlashFrame:GetWidth() * frame.hFlashFrame.flashSize)
-	--print("FLASH SIZE:"..frame.hFlashFrame:GetHeight().."  "..frame.hFlashFrame:GetWidth())
-	--print("FLASH TEXURE SIZE:"..frame.hFlashFrame.texture:GetHeight().."  "..frame.hFlashFrame.texture:GetWidth())
+	frame.ffFlashFrame.flashModifier = 1
+	frame.ffFlashFrame.flashSize = (size or 240) / 100
+	frame.ffFlashFrame.flashBrightness = (brightness or 100) / 100
+	frame.ffFlashFrame.texture:SetAlpha(1 * frame.ffFlashFrame.flashBrightness)
+	frame.ffFlashFrame.texture:SetHeight(frame.ffFlashFrame:GetHeight() * frame.ffFlashFrame.flashSize)
+	frame.ffFlashFrame.texture:SetWidth(frame.ffFlashFrame:GetWidth() * frame.ffFlashFrame.flashSize)
+	--print("FLASH SIZE:"..frame.ffFlashFrame:GetHeight().."  "..frame.ffFlashFrame:GetWidth())
+	--print("FLASH TEXURE SIZE:"..frame.ffFlashFrame.texture:GetHeight().."  "..frame.ffFlashFrame.texture:GetWidth())
 	if type(color) == "table" then
-		frame.hFlashFrame.texture:SetVertexColor(color.r or 1, color.g or 1, color.b or 1)
+		frame.ffFlashFrame.texture:SetVertexColor(color.r or 1, color.g or 1, color.b or 1)
 	elseif type(color) == "string" then
 		local color = COLORTABLE[color:lower()]
 		if color then
-			frame.hFlashFrame.texture:SetVertexColor(color.r or 1, color.g or 1, color.b or 1)
+			frame.ffFlashFrame.texture:SetVertexColor(color.r or 1, color.g or 1, color.b or 1)
 		else
-			frame.hFlashFrame.texture:SetVertexColor(1, 1, 1)
+			frame.ffFlashFrame.texture:SetVertexColor(1, 1, 1)
 		end
 	else
-		frame.hFlashFrame.texture:SetVertexColor(1, 1, 1)
+		frame.ffFlashFrame.texture:SetVertexColor(1, 1, 1)
 	end
-	frame.hFlashFrame:Show()
+	frame.ffFlashFrame:Show()
 end
 
 -- Hide flash frame
 function FlashFrame:HideFlashFrame(frame)
-	print("HideFlashFrame")
-	if not frame.hFlashFrame then return end
+	--print("HideFlashFrame")
+	if not frame.ffFlashFrame then return end
 
-	frame.hFlashFrame.flashModifier = 0
-	frame.hFlashFrame:Hide()
+	frame.ffFlashFrame.flashModifier = 0
+	frame.ffFlashFrame:Hide()
+end
+
+local function SetUpAnimGroup(self)
+	--print("SetUpAnimGroup")
+	self.anim = self:CreateAnimationGroup("Flash")
+	self.anim.fadein = self.anim:CreateAnimation("ALPHA", "FadeIn")
+	self.anim.fadein:SetChange(1)
+	self.anim.fadein:SetOrder(2)
+
+	self.anim.fadeout = self.anim:CreateAnimation("ALPHA", "FadeOut")
+	self.anim.fadeout:SetChange(-1)
+	self.anim.fadeout:SetOrder(1)
+end
+
+function FlashFrame:Fadeout(self, duration)
+	--print("FlashFrame2:Flash "..self:GetName())
+	if not self.anim then
+		SetUpAnimGroup(self)
+	end
+	--print("FlashFrame2:Flash  after creation")
+
+
+	self.anim.fadein:SetDuration(duration)
+	self.anim.fadeout:SetDuration(duration)
+	self.anim:Play()
+end
+
+function FlashFrame:StopFadeout(self)
+	if self.anim then
+		self.anim:Finish()
+	end
 end
