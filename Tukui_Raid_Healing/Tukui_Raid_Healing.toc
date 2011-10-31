@@ -1,11 +1,10 @@
 ## Interface: 40200
-## Version: 2.5
-## Author: SinaC
-## Title: |cffC495DDTukui Raid Healium|r
-## Credits: Tukz, Engypoo, BigRedBrent, Rabbit
-## Notes: Healium raid frames for Tukui
-## URL: https://github.com/SinaC/Tukui_Raid_Healing
+## Author: Tukz
+## Title: |cffC495DDTukui Raid for healers|r
+## Notes: Raid layout for party and raid, Healer mode.
+## X-Email: tukz@tukui.org
+## X-Category: UnitFrame
 ## RequiredDeps: Tukui
-## OptionalDeps: Tukui_TabMenu
 
-Tukui_Raid_Healing.xml
+oUF_hTukz_Raid01_15.lua
+oUF_hTukz_Raid16_40.lua
